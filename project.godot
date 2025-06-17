@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="DungeonAdventure"
+config/name="Khaos//Core"
 run/main_scene="res://MainMenu.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -26,7 +26,7 @@ ShopManager="*res://scripts/ShopManager.gd"
 [display]
 
 window/size/viewport_width=1366
-window/size/viewport_height=760
+window/size/viewport_height=768
 mouse_cursor/custom_image="res://cursors/cursor1.png"
 mouse_cursor/custom_image_hotspot=Vector2(2, 2)
 
