@@ -1,0 +1,48 @@
+[gd_scene load_steps=5 format=3 uid="uid://c7pv87faigqcj"]
+
+[ext_resource type="Texture2D" uid="uid://ncivp871lm24" path="res://assets/frame-tooltip.png" id="2_cf63g"]
+[ext_resource type="Script" uid="uid://cvim6kxs0un1e" path="res://tooltip.gd" id="2_lv0q8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vgsjd"]
+bg_color = Color(0.0383972, 0.0383972, 0.0383971, 1)
+
+[sub_resource type="FontVariation" id="FontVariation_vwt06"]
+
+[node name="Tooltip" type="Panel"]
+custom_minimum_size = Vector2(200, 150)
+offset_right = 232.0
+offset_bottom = 150.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_vgsjd")
+script = ExtResource("2_lv0q8")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(112.5, 75)
+scale = Vector2(1.26484, 0.532508)
+texture = ExtResource("2_cf63g")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 7.0
+offset_top = 29.0
+offset_right = 47.0
+offset_bottom = 118.0
+theme_override_constants/separation = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelName" type="Label" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = SubResource("FontVariation_vwt06")
+
+[node name="LabelEffect" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="LabelCooldown" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="LabelPassive" type="Label" parent="VBoxContainer"]
+layout_mode = 2

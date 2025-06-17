@@ -1,0 +1,83 @@
+[gd_scene load_steps=8 format=3 uid="uid://boio3v0lpm8pa"]
+
+[ext_resource type="Script" uid="uid://bhbfj5b0h3i2e" path="res://main_menu.gd" id="1_d7imt"]
+[ext_resource type="Texture2D" uid="uid://c1145qga5womq" path="res://scripts/bgmainscreen.jpg" id="2_v047v"]
+[ext_resource type="Texture2D" uid="uid://h7152dfi07c7" path="res://frost_shard.png" id="3_3cn1w"]
+[ext_resource type="Texture2D" uid="uid://brqia052gnyd3" path="res://btn.png" id="3_5pf7a"]
+[ext_resource type="Theme" uid="uid://cjopegwigwhl7" path="res://resources/btn.tres" id="4_l6sl0"]
+[ext_resource type="Texture2D" uid="uid://cu8fhv4kvs8x6" path="res://logogame.png" id="5_qt320"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_1hniq"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_d7imt")
+
+[node name="Mainscreenbg" type="Sprite2D" parent="."]
+position = Vector2(579.33, 319.5)
+scale = Vector2(0.592153, 0.592153)
+texture = ExtResource("2_v047v")
+
+[node name="FrostShard" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_1hniq")
+position = Vector2(76.5, 242.393)
+scale = Vector2(0.408537, 0.408536)
+texture = ExtResource("3_3cn1w")
+
+[node name="FrostShard2" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_1hniq")
+position = Vector2(77, 414)
+scale = Vector2(0.408537, 0.408536)
+texture = ExtResource("3_3cn1w")
+
+[node name="Btn" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(170.079, 174.5)
+scale = Vector2(0.710526, 0.710526)
+texture = ExtResource("3_5pf7a")
+
+[node name="NewGameButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 30.0
+offset_top = 204.0
+offset_right = 315.0
+offset_bottom = 283.0
+grow_vertical = 2
+theme = ExtResource("4_l6sl0")
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "New Game"
+
+[node name="TalentTree" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 30.0
+offset_top = 376.0
+offset_right = 315.0
+offset_bottom = 455.0
+grow_vertical = 2
+theme = ExtResource("4_l6sl0")
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "Talent Tree"
+
+[node name="LoadGameButton" type="Button" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 21.0
+offset_top = 211.0
+offset_right = 113.0
+offset_bottom = 242.0
+text = "LoadGame
+"
+
+[node name="Logo" type="Sprite2D" parent="."]
+position = Vector2(579, 131)
+scale = Vector2(0.68617, 0.68617)
+texture = ExtResource("5_qt320")

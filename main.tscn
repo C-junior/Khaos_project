@@ -1,0 +1,141 @@
+[gd_scene load_steps=6 format=3 uid="uid://lutv0t7myob2"]
+
+[ext_resource type="Texture2D" uid="uid://ck76hbj7w7rct" path="res://bg-arena.png" id="1_sgcma"]
+[ext_resource type="Script" uid="uid://brpc7uhyalbhr" path="res://scripts/GameManager.gd" id="2_vao72"]
+[ext_resource type="Script" uid="uid://dpti20fyuklp3" path="res://scripts/UIManager.gd" id="3_5e8q2"]
+[ext_resource type="Script" uid="uid://d2edaki3ohhlg" path="res://scripts/DataManager.gd" id="4_53i20"]
+[ext_resource type="PackedScene" uid="uid://bi2cou0nn3ke7" path="res://CharacterSelection.tscn" id="5_27514"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(578.75, 326.25)
+scale = Vector2(1.03536, 1.06364)
+texture = ExtResource("1_sgcma")
+
+[node name="PlayerCards" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 327.0
+offset_top = 392.0
+offset_right = 327.0
+offset_bottom = 392.0
+theme_override_constants/separation = 40
+
+[node name="EnemyCards" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 46.0
+offset_right = 1028.0
+offset_bottom = 86.0
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="WaveLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 480.0
+offset_top = 7.0
+offset_right = 520.0
+offset_bottom = 30.0
+
+[node name="EndTurnButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 13.0
+offset_top = 306.0
+offset_right = 87.0
+offset_bottom = 337.0
+text = "EndTurn"
+
+[node name="TurnLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 477.0
+offset_top = 319.0
+offset_right = 566.0
+offset_bottom = 342.0
+grow_horizontal = 2
+text = "Player Turn"
+horizontal_alignment = 1
+
+[node name="UpgradePanel" type="Panel" parent="."]
+visible = false
+clip_contents = true
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_right = 1100.0
+offset_bottom = 594.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="UpgradeContainer" type="HBoxContainer" parent="UpgradePanel"]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -242.0
+offset_bottom = 167.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="PointsLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 1044.0
+offset_top = 16.0
+offset_right = 1084.0
+offset_bottom = 39.0
+
+[node name="NotEnoughLabel" type="Label" parent="."]
+visible = false
+modulate = Color(0.700895, 0.0316351, 0.0175902, 1)
+layout_mode = 0
+offset_left = 496.0
+offset_top = 33.0
+offset_right = 713.0
+offset_bottom = 56.0
+text = "doesnt have enough Points"
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("2_vao72")
+
+[node name="UIManager" type="Node" parent="."]
+script = ExtResource("3_5e8q2")
+
+[node name="DataManager" type="Node" parent="."]
+script = ExtResource("4_53i20")
+
+[node name="SaveButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1055.0
+offset_top = 48.0
+offset_right = 1149.0
+offset_bottom = 79.0
+text = "Save Game"
+
+[node name="LoadButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1051.0
+offset_top = 89.0
+offset_right = 1147.0
+offset_bottom = 120.0
+text = "Load Game"
+
+[node name="CharacterSelection" type="Node" parent="."]
+
+[node name="CharacterSelection" parent="CharacterSelection" instance=ExtResource("5_27514")]
+unique_name_in_owner = true
+offset_left = 28.0
+offset_top = 5.0
+offset_right = 28.0
+offset_bottom = 5.0

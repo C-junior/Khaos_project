@@ -1,0 +1,94 @@
+[gd_scene load_steps=9 format=3 uid="uid://bswcn7774jjn0"]
+
+[ext_resource type="PackedScene" uid="uid://dcejojsuwlaj7" path="res://talent_tree/talent_button.tscn" id="1_4xdnq"]
+[ext_resource type="Script" uid="uid://dv01as346dm1e" path="res://talent_tree/panel.gd" id="1_wmxxl"]
+[ext_resource type="Texture2D" uid="uid://b5h1t2rxlke2u" path="res://assets/icon-talent/atk.png" id="2_u8vbl"]
+[ext_resource type="Texture2D" uid="uid://d4kshrw80yx85" path="res://assets/icon-talent/health-increase.png" id="3_txbqa"]
+[ext_resource type="Texture2D" uid="uid://djddyfcksca0" path="res://assets/icon-talent/crit-atk.png" id="3_v3f4k"]
+[ext_resource type="Texture2D" uid="uid://f47n1s8ual6c" path="res://assets/icon-talent/regeneration.png" id="4_v3f4k"]
+[ext_resource type="Texture2D" uid="uid://dthr3kso7fhi7" path="res://assets/icon-talent/healing-shield.png" id="6_0lw3y"]
+[ext_resource type="Texture2D" uid="uid://cqi6dqdmd3bod" path="res://assets/icon-talent/health-capsule.png" id="7_wmxxl"]
+
+[node name="TalentTree" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1368.0
+offset_bottom = 758.0
+metadata/_edit_lock_ = true
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_wmxxl")
+metadata/_edit_lock_ = true
+
+[node name="Button" type="Button" parent="Panel"]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 9.0
+offset_right = 128.0
+offset_bottom = 40.0
+text = "Back to Menu"
+
+[node name="TalentButton" parent="." instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = 224.0
+offset_top = 241.0
+offset_right = 264.0
+offset_bottom = 281.0
+
+[node name="TalentButton" parent="TalentButton" instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = -1.0
+offset_top = -108.0
+offset_right = 39.0
+offset_bottom = -68.0
+disabled = true
+texture_normal = ExtResource("2_u8vbl")
+
+[node name="TalentButton" parent="TalentButton/TalentButton" instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = -61.0
+offset_top = -89.0
+offset_right = -21.0
+offset_bottom = -49.0
+texture_normal = ExtResource("3_v3f4k")
+
+[node name="TalentButton2" parent="TalentButton/TalentButton" instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = 53.0
+offset_top = -85.0
+offset_right = 93.0
+offset_bottom = -45.0
+texture_normal = ExtResource("4_v3f4k")
+
+[node name="TalentButton2" parent="TalentButton" instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = 107.0
+offset_top = 3.0
+offset_right = 147.0
+offset_bottom = 43.0
+disabled = true
+texture_normal = ExtResource("3_txbqa")
+
+[node name="TalentButton" parent="TalentButton/TalentButton2" instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = 96.0
+offset_top = -23.0
+offset_right = 136.0
+offset_bottom = 17.0
+disabled = true
+texture_normal = ExtResource("6_0lw3y")
+
+[node name="TalentButton2" parent="TalentButton/TalentButton2" instance=ExtResource("1_4xdnq")]
+layout_mode = 0
+offset_left = 98.0
+offset_top = 47.0
+offset_right = 138.0
+offset_bottom = 87.0
+disabled = true
+texture_normal = ExtResource("7_wmxxl")

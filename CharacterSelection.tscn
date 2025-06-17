@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://bi2cou0nn3ke7"]
+
+[ext_resource type="Script" uid="uid://dt7egtem3t8bn" path="res://character_selection.gd" id="1_yo61v"]
+
+[node name="CharacterSelection" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_yo61v")
+
+[node name="CharacterList" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 65.0
+offset_right = 41.0
+offset_bottom = 105.0
+theme_override_constants/separation = 20
+
+[node name="StartButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 523.0
+offset_top = 3.0
+offset_right = 619.0
+offset_bottom = 34.0
+text = "Start Game"
