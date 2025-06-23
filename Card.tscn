@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://csr3fryjw3gex"]
+[gd_scene load_steps=5 format=3 uid="uid://csr3fryjw3gex"]
 
 [ext_resource type="Script" uid="uid://gw22clqygi4r" path="res://card.gd" id="1_7uoj0"]
 [ext_resource type="Texture2D" uid="uid://1d5h6lfucqwx" path="res://icon.svg" id="1_js232"]
 [ext_resource type="Texture2D" uid="uid://c85kam5a5jmf2" path="res://frame-card.png" id="3_qosr8"]
+[ext_resource type="Texture2D" uid="uid://dm3ujg3a33lsm" path="res://artifacts/vampire_fang.png" id="4_3ujke"]
 
 [node name="Card" type="Button"]
 custom_minimum_size = Vector2(150, 200)
@@ -30,6 +31,27 @@ offset_bottom = 449.0
 scale = Vector2(0.68, 0.68)
 texture = ExtResource("3_qosr8")
 
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+clip_contents = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 0
+offset_left = -3.0
+offset_top = 218.0
+offset_right = 375.0
+offset_bottom = 346.0
+scale = Vector2(0.4, 0.4)
+pivot_offset = Vector2(5, 0)
+
+[node name="AbilityButton1" type="TextureButton" parent="HBoxContainer"]
+layout_mode = 2
+texture_normal = ExtResource("4_3ujke")
+stretch_mode = 0
+
+[node name="AbilityButton2" type="TextureButton" parent="HBoxContainer"]
+layout_mode = 2
+texture_normal = ExtResource("4_3ujke")
+stretch_mode = 0
+
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
 offset_left = -12.0
@@ -54,15 +76,3 @@ layout_mode = 2
 text = "15"
 horizontal_alignment = 1
 vertical_alignment = 2
-
-[node name="AbilityButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-icon_alignment = 1
-
-[node name="ArtifactIcon" type="TextureRect" parent="VBoxContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-
-[node name="HealthBar" type="ProgressBar" parent="VBoxContainer"]
-visible = false
-layout_mode = 2
