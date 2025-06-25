@@ -9,13 +9,15 @@ var current_cooldown: int = 0
 var rune: Rune = null
 var requires_targets: bool
 var tooltip: String
+var rarity: String
 
-func _init(_name: String = "", _base_ability: Callable = Callable(), _cooldown: int = 0, _requires_targets: bool = false, _tooltip: String = ""):
+func _init(_name: String = "", _base_ability: Callable = Callable(), _cooldown: int = 0, _requires_targets: bool = false, _tooltip: String = "", _rarity: String = "Common"):
 	name = _name
 	base_ability = _base_ability
 	cooldown = _cooldown
 	requires_targets = _requires_targets
 	tooltip = _tooltip
+	rarity = _rarity
 
 func attach_rune(_rune: Rune):
 	rune = _rune

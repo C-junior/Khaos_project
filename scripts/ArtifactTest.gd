@@ -12,6 +12,9 @@ func test_artifact_creation():
 		print("  - Name: %s" % thunder_bolt.name)
 		print("  - Cooldown: %d" % thunder_bolt.cooldown)
 		print("  - Requires targets: %s" % thunder_bolt.requires_targets)
+		print("  - Rarity: %s" % thunder_bolt.rarity) # Check rarity
+		if thunder_bolt.rarity == null or thunder_bolt.rarity.is_empty():
+			print("  ✗ WARN: Thunder Bolt rarity is not set!")
 	else:
 		print("✗ Failed to create Thunder Bolt artifact")
 	
@@ -37,7 +40,9 @@ func test_all_artifacts():
 	for artifact_name in artifact_names:
 		var artifact = ArtifactFactory.create_artifact(artifact_name)
 		if artifact:
-			print("✓ %s - Cooldown: %d, Targets: %s" % [artifact_name, artifact.cooldown, artifact.requires_targets])
+			print("✓ %s - Cooldown: %d, Targets: %s, Rarity: %s" % [artifact_name, artifact.cooldown, artifact.requires_targets, artifact.rarity])
+			if artifact.rarity == null or artifact.rarity.is_empty():
+				print("  ✗ WARN: %s rarity is not set!" % artifact_name)
 		else:
 			print("✗ Failed to create %s" % artifact_name)
 	

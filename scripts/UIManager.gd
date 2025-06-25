@@ -39,6 +39,22 @@ func _ready():
 	khaos_coins_label.position = Vector2(10, 30) # Adjust as needed. Assuming TurnLabel is at (10,10)
 	add_child(khaos_coins_label)
 
+	# Add Inventory Button
+	var inventory_button = Button.new()
+	inventory_button.name = "InventoryButton"
+	inventory_button.text = "Inventory"
+	inventory_button.position = Vector2(10, 60) # Adjust as needed
+	inventory_button.pressed.connect(Callable(self, "_on_inventory_button_pressed"))
+	add_child(inventory_button)
+
+	# Attempt to get the Inventory node. This assumes Inventory.tscn is instanced in Main.tscn
+	# and UIManager can access it, e.g. if UIManager is also a child of Main.tscn's root.
+	# A more robust way would be to have GameManager or Main.gd manage this relationship.
+	var inventory_node = get_node_or_null("../Inventory") # Adjust path if UIManager is not sibling to Inventory
+	if inventory_node:
+		inventory_node.inventory_closed.connect(Callable(self, "_on_inventory_closed"))
+
+
 	_dm_instance = _get_dm_instance("_ready")
 
 	# Fetch initial coins and update
@@ -117,106 +133,109 @@ func start_upgrade_phase():
 	# or if they are mutually exclusive.
 	# If shop is accessible, a button could be added here to go to the shop.
 	game_manager.current_state = game_manager.State.UPGRADE_PHASE
-	upgrade_points = 5 + game_manager.current_wave
+	# upgrade_points = 5 + game_manager.current_wave # Removed upgrade points system for now
 	update_turn_label()
-	get_node("../UpgradePanel").show()
-	get_node("../PointsLabel").text = "Points: " + str(upgrade_points)
 	
-	var upgrade_container = get_node("../UpgradePanel/UpgradeContainer")
+	var upgrade_panel_node = get_node_or_null("../UpgradePanel")
+	if not upgrade_panel_node:
+		printerr("UIManager: UpgradePanel node not found!")
+		return
+	upgrade_panel_node.show()
+	
+	# Assuming PointsLabel might be repurposed or hidden. For now, clear it.
+	var points_label_node = get_node_or_null("../PointsLabel")
+	if points_label_node:
+		points_label_node.text = "Choose an Artifact"
+
+	var upgrade_container = get_node_or_null("../UpgradePanel/UpgradeContainer")
+	if not upgrade_container:
+		printerr("UIManager: UpgradePanel/UpgradeContainer node not found!")
+		return
+		
 	for child in upgrade_container.get_children():
 		child.queue_free()
-	
-	var available_artifacts = []
-	for artifact_name in Data.artifacts.keys():
-		var should_unlock = true
-		# Ensure game_manager is valid before accessing current_wave
-		var current_game_wave = 0
-		if game_manager and "current_wave" in game_manager: # Check property exists too
-			current_game_wave = game_manager.current_wave
 
-		if artifact_name == "Shadow Cloak" and current_game_wave < 3:
-			should_unlock = false
-		elif artifact_name == "Earth Spike" and current_game_wave < 6:
-			should_unlock = false
-		elif artifact_name == "Soul Gem" and current_game_wave < 9:
-			should_unlock = false
-		elif artifact_name == "Blood Rune" and current_game_wave < 12:
-			should_unlock = false
-		if should_unlock:
-			available_artifacts.append({"name": artifact_name, "cost": Data.artifacts[artifact_name]["cost"]})
-	
-	available_artifacts.shuffle()
-	var displayed_artifacts = available_artifacts.slice(0, 4)
+	# Get all artifact names from Data.gd
+	var all_artifact_names = Data.artifacts.keys()
+	all_artifact_names.shuffle() # Randomize the list
 
-	for card in get_node("../PlayerCards").get_children():
-		var card_section = VBoxContainer.new()
-		var label = Label.new()
-		label.text = "Card (%s)" % card.name
-		card_section.add_child(label)
-		
-		var health_button = Button.new()
-		health_button.text = "Upgrade Health (+1)"
-		health_button.pressed.connect(Callable(self, "_on_upgrade_health").bind(card))
-		card_section.add_child(health_button)
-		
-		var attack_button = Button.new()
-		attack_button.text = "Upgrade Attack (+1)"
-		attack_button.pressed.connect(Callable(self, "_on_upgrade_attack").bind(card))
-		card_section.add_child(attack_button)
-		
-		var artifact_label = Label.new()
-		artifact_label.text = "Artifact: %s" % (card.artifact.name if card.artifact else "None")
-		card_section.add_child(artifact_label)
-		
-		for artifact in displayed_artifacts:
-			var artifact_container = HBoxContainer.new()
+	# Display up to 3 artifacts
+	var num_artifacts_to_display = min(all_artifact_names.size(), 3)
+	var displayed_artifacts = all_artifact_names.slice(0, num_artifacts_to_display)
+
+	if displayed_artifacts.is_empty():
+		var no_artifacts_label = Label.new()
+		no_artifacts_label.text = "No artifacts available to choose from."
+		upgrade_container.add_child(no_artifacts_label)
+	else:
+		for artifact_name_str in displayed_artifacts:
+			var artifact_data = Data.artifacts[artifact_name_str]
+
+			var artifact_button_container = HBoxContainer.new() # To hold icon and button
+
 			var artifact_icon = TextureRect.new()
-			artifact_icon.texture = load(Data.artifacts[artifact.name]["icon"])
+			if artifact_data.has("icon") and not artifact_data.icon.is_empty():
+				var tex = load(artifact_data.icon)
+				if tex:
+					artifact_icon.texture = tex
 			artifact_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			artifact_icon.custom_minimum_size = Vector2(24, 24)
-			artifact_container.add_child(artifact_icon)
-			
-			var artifact_button = Button.new()
-			artifact_button.text = "Equip %s (%d pts)" % [artifact.name, artifact.cost]
-			artifact_button.pressed.connect(Callable(self, "_on_equip_artifact").bind(card, artifact.name, artifact.cost))
-			# Add hover signals
-			artifact_button.connect("mouse_entered", Callable(self, "_on_artifact_hover").bind(artifact))
-			artifact_button.connect("mouse_exited", Callable(self, "_on_hover_exit"))
-			artifact_container.add_child(artifact_button)
-			
-			card_section.add_child(artifact_container)
-		
-		if card.artifact:
-			var rune_label = Label.new()
-			rune_label.text = "Rune: %s" % (card.artifact.rune.name if card.artifact.rune else "None")
-			card_section.add_child(rune_label)
-			for rune_name in Data.runes.keys():
-				var rune_container = HBoxContainer.new()
-				var rune_icon = TextureRect.new()
-				rune_icon.texture = load(Data.runes[rune_name]["icon"])
-				rune_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-				rune_icon.custom_minimum_size = Vector2(24, 24)
-				rune_container.add_child(rune_icon)
-				
-				var rune_button = Button.new()
-				rune_button.text = "Attach %s (%d pts)" % [rune_name, Data.runes[rune_name]["cost"]]
-				rune_button.pressed.connect(Callable(self, "_on_attach_rune").bind(card, rune_name, Data.runes[rune_name]["cost"]))
-				# Add hover signals
-				rune_button.connect("mouse_entered", Callable(self, "_on_rune_hover").bind(rune_name))
-				rune_button.connect("mouse_exited", Callable(self, "_on_hover_exit"))
-				rune_container.add_child(rune_button)
-				
-				card_section.add_child(rune_container)
-		
-		upgrade_container.add_child(card_section)
-	
-	var continue_button = Button.new()
-	continue_button.text = "Continue"
-	continue_button.pressed.connect(Callable(self, "_on_continue"))
-	upgrade_container.add_child(continue_button)
+			artifact_icon.custom_minimum_size = Vector2(32, 32) # Increased icon size
+			artifact_button_container.add_child(artifact_icon)
 
-# Tooltip hover functions
-func _on_artifact_hover(artifact):
+			var artifact_button = Button.new()
+			# Display name and rarity. Tooltip shows full description.
+			artifact_button.text = "%s (%s)" % [artifact_name_str, artifact_data.get("rarity", "N/A")]
+			artifact_button.tooltip_text = artifact_data.get("tooltip", "No description available.")
+			# The button's action will be to add the artifact to inventory and close the panel.
+			artifact_button.pressed.connect(Callable(self, "_on_upgrade_artifact_selected").bind(artifact_name_str))
+			
+			# Hover for tooltip (using existing mechanism if still desired, but button tooltip_text is simpler)
+			# artifact_button.mouse_entered.connect(Callable(self, "_on_artifact_data_hover").bind(artifact_data)) # Pass full data
+			# artifact_button.mouse_exited.connect(Callable(self, "_on_hover_exit"))
+
+			artifact_button_container.add_child(artifact_button)
+			upgrade_container.add_child(artifact_button_container)
+
+	# Add a "Skip" or "Continue" button if no artifact is chosen, or if all are chosen.
+	# For now, selecting an artifact will be the primary way to continue.
+	# If no artifacts were displayed, we need a continue button.
+	if displayed_artifacts.is_empty():
+		var continue_button_empty = Button.new()
+		continue_button_empty.text = "Continue"
+		continue_button_empty.pressed.connect(Callable(self, "_on_continue_after_upgrade"))
+		upgrade_container.add_child(continue_button_empty)
+
+	# Note: The old structure iterated player cards and showed complex options per card.
+	# This is now simplified to a single choice of one artifact to add to inventory.
+	# The _on_equip_artifact, _on_attach_rune, _on_upgrade_health, _on_upgrade_attack methods
+	# will be removed or become obsolete with this change.
+
+# Tooltip hover functions (modified for generic artifact data)
+func _on_artifact_data_hover(artifact_definition: Dictionary):
+	# This function is kept if detailed hover is preferred over button's native tooltip
+	if current_tooltip:
+		current_tooltip.queue_free()
+	current_tooltip = load("res://Tooltip.tscn").instantiate() # Ensure Tooltip.tscn is available
+	
+	var icon_path = artifact_definition.get("icon", "")
+	var name = artifact_definition.get("name", "Unknown Artifact") # Should come from key if artifact_definition is the value
+	var tooltip_text = artifact_definition.get("tooltip", "No description.")
+	var cooldown = artifact_definition.get("cooldown", 0)
+	# var rarity = artifact_definition.get("rarity", "N/A") # Could add rarity to tooltip display
+
+	# Assuming Tooltip.gd has a method like set_artifact_data or a more generic one
+	if current_tooltip.has_method("set_artifact_data"):
+		current_tooltip.set_artifact_data(icon_path, name, tooltip_text, cooldown)
+	elif current_tooltip.has_method("set_data"): # Generic setter
+		current_tooltip.set_data(name, tooltip_text, icon_path) # Example
+	else: # Fallback or simple text
+		current_tooltip.text = "%s\n%s\nCD: %d" % [name, tooltip_text, cooldown]
+
+	get_tree().root.add_child(current_tooltip) # Add to root to ensure it's on top
+	current_tooltip.global_position = get_viewport().get_mouse_position() + Vector2(10, 10)
+
+
+func _on_rune_hover(rune_name: String):
 	if current_tooltip:
 		current_tooltip.queue_free()
 	current_tooltip = load("res://Tooltip.tscn").instantiate()
@@ -257,55 +276,47 @@ func _process(delta):
 			Vector2.ZERO,
 			viewport_size - tooltip_size
 		)
-		
-func _on_upgrade_health(card):
-	if upgrade_points >= Data.health_upgrade_cost:
-		card.health += 1
-		card.max_health += 1
-		upgrade_points -= Data.health_upgrade_cost
-		get_node("../PointsLabel").text = "Points: " + str(upgrade_points)
-		card.update_labels()
 
-func _on_upgrade_attack(card):
-	if upgrade_points >= Data.attack_upgrade_cost:
-		card.attack += 1
-		upgrade_points -= Data.attack_upgrade_cost
-		get_node("../PointsLabel").text = "Points: " + str(upgrade_points)
-		card.update_labels()
+func _on_upgrade_artifact_selected(artifact_name_str: String):
+	var dm = _get_dm_instance("_on_upgrade_artifact_selected")
+	if not is_instance_valid(dm):
+		printerr("UIManager: DataManager not found, cannot add artifact to inventory.")
+		# Optionally, show an error to the player or just proceed without adding
+		_on_continue_after_upgrade() # Proceed even if DM fails, artifact won't be added
+		return
 
-func _on_equip_artifact(card, artifact_name: String, cost: int):
-	if upgrade_points >= cost:
-		card.artifact = Artifact.new(
-			artifact_name,
-			Data.artifacts[artifact_name]["ability"],
-			Data.get_artifact_cooldown(artifact_name),
-			Data.get_artifact_requires_targets(artifact_name)
-		)
-		upgrade_points -= cost
-		get_node("../PointsLabel").text = "Points: " + str(upgrade_points)
-		card.update_labels()
+	if not dm.player_artifact_inventory.has(artifact_name_str):
+		dm.player_artifact_inventory.append(artifact_name_str)
+		print("UIManager: Added '%s' to player artifact inventory." % artifact_name_str)
+		if dm.has_method("save_game"): # Ensure DataManager can save
+			dm.save_game() # Save the change to inventory
 	else:
-		show_temp_label()
-		#start_upgrade_phase()
+		print("UIManager: Player already owns '%s'." % artifact_name_str)
+		# Player might pick an artifact they already have from a previous round/choice.
+		# This is fine, they just get another "copy" conceptually if inventory was list of instances.
+		# Since inventory is list of names, this check prevents duplicates if that's desired behavior.
+		# If duplicates are allowed (e.g. can have 3 Healing Stones), remove this check.
+		# For now, let's assume unique names in inventory means one of each type.
 
-func _on_attach_rune(card, rune_name: String, cost: int):
-	if upgrade_points >= cost and card.artifact and not card.artifact.rune:
-		card.artifact.attach_rune(Rune.new(rune_name, Data.runes[rune_name]["ability"]))
-		upgrade_points -= cost
-		get_node("../PointsLabel").text = "Points: " + str(upgrade_points)
-		card.update_labels()
-		#start_upgrade_phase()
+	_on_continue_after_upgrade()
 
-func _on_continue():
-	get_node("../UpgradePanel").hide()
-	var game_manager = get_node_or_null("../GameManager")
+
+func _on_continue_after_upgrade():
+	var upgrade_panel_node = get_node_or_null("../UpgradePanel")
+	if upgrade_panel_node:
+		upgrade_panel_node.hide()
+
+	var game_manager = get_node_or_null("../GameManager") # Path might need adjustment
+	if not game_manager:
+		game_manager = get_node_or_null("/root/Main/GameManager") # Alternative path
+
 	if game_manager:
 		game_manager.current_wave += 1
 		game_manager.start_wave()
 	else:
-		printerr("UIManager: GameManager not found. Cannot continue.")
+		printerr("UIManager: GameManager not found. Cannot continue after upgrade.")
 	
-func show_temp_label():
+func show_temp_label(): # This function might be obsolete if there are no costs.
 	var label = get_node("../NotEnoughLabel")
 	label.show()
 	
@@ -352,3 +363,35 @@ func update_wave_progress():
 
 	if get_node_or_null("../WaveLabel"): # Check if label exists
 		get_node("../WaveLabel").text = "Wave: %d (Enemies Left: %d)" % [current_game_wave + 1, enemies_left]
+
+
+func _on_inventory_button_pressed():
+	# Path to Inventory node might need adjustment depending on actual scene tree structure.
+	# It's often better if a higher-level node (like Main.gd or GameManager) handles this.
+	var inventory_node = get_node_or_null("../Inventory") # Example: if UIManager and Inventory are siblings
+	if not inventory_node:
+		inventory_node = get_node_or_null("/root/Main/Inventory") # Example: if Inventory is child of Main scene root
+
+	if inventory_node and inventory_node.has_method("open_inventory"):
+		var game_manager_node = get_node_or_null("../GameManager") # Example path
+		if not game_manager_node:
+			game_manager_node = get_node_or_null("/root/Main/GameManager") # Example path for GM
+
+		var data_manager_node = _get_dm_instance("_on_inventory_button_pressed") # Use helper to get DM
+
+		if game_manager_node and data_manager_node:
+			# Pass GameManager and DataManager references to the inventory
+			inventory_node.setup_inventory(game_manager_node, data_manager_node)
+			inventory_node.open_inventory()
+			# Optionally, pause the game or disable other UI elements
+			# get_tree().paused = true
+		else:
+			printerr("UIManager: Failed to get GameManager or DataManager for Inventory setup.")
+	else:
+		printerr("UIManager: Inventory node not found or doesn't have open_inventory method.")
+
+func _on_inventory_closed():
+	# Handle anything that needs to happen when inventory is closed
+	print("UIManager: Inventory closed signal received.")
+	# if get_tree().paused:
+		# get_tree().paused = false # Resume game if it was paused

@@ -34,7 +34,7 @@ var ENEMY_TYPES = {
 	# Add more enemies below this line
 }
 
-# Artifact data: name -> {ability: Callable, icon: String, cooldown: int, requires_targets: bool, tooltip: String}
+# Artifact data: name -> {ability: Callable, icon: String, cooldown: int, requires_targets: bool, tooltip: String, rarity: String}
 
 var artifacts = {
 	"Thunder Bolt": {
@@ -43,7 +43,7 @@ var artifacts = {
 		"cooldown": 2,
 		"requires_targets": true,
 		"tooltip": "Deals full attack damage to one enemy",
-		"cost": 3
+		"rarity": "Common"
 	},
 	"Healing Stone": {
 		"ability": Callable(self, "healing_stone_ability"),
@@ -51,7 +51,7 @@ var artifacts = {
 		"cooldown": 3,
 		"requires_targets": false,
 		"tooltip": "Heals this card for 5 health",
-		"cost": 3
+		"rarity": "Common"
 	},
 	"Fire Orb": {
 		"ability": Callable(self, "fire_orb_ability"),
@@ -59,7 +59,7 @@ var artifacts = {
 		"cooldown": 3,
 		"requires_targets": false,
 		"tooltip": "Deals half attack damage to all enemies",
-		"cost": 4
+		"rarity": "Uncommon"
 	},
 	"Iron Shield": {
 		"ability": Callable(self, "iron_shield_ability"),
@@ -67,7 +67,7 @@ var artifacts = {
 		"cooldown": 2,
 		"requires_targets": false,
 		"tooltip": "Reduces next damage taken by 2",
-		"cost": 2
+		"rarity": "Common"
 	},
 	"Poison Vial": {
 		"ability": Callable(self, "poison_vial_ability"),
@@ -75,7 +75,7 @@ var artifacts = {
 		"cooldown": 3,
 		"requires_targets": true,
 		"tooltip": "Poisons an enemy for 1 damage/turn (3 turns)",
-		"cost": 3
+		"rarity": "Common"
 	},
 	"Frost Shard": {
 		"ability": Callable(self, "frost_shard_ability"),
@@ -83,7 +83,7 @@ var artifacts = {
 		"cooldown": 2,
 		"requires_targets": true,
 		"tooltip": "Freezes an enemy, skipping its next turn",
-		"cost": 3
+		"rarity": "Uncommon"
 	},
 	"Vampire Fang": {
 		"ability": Callable(self, "vampire_fang_ability"),
@@ -91,7 +91,7 @@ var artifacts = {
 		"cooldown": 3,
 		"requires_targets": true,
 		"tooltip": "Steals 3 health from an enemy",
-		"cost": 4
+		"rarity": "Uncommon"
 	},
 	"Wind Gust": {
 		"ability": Callable(self, "wind_gust_ability"),
@@ -99,7 +99,7 @@ var artifacts = {
 		"cooldown": 2,
 		"requires_targets": true,
 		"tooltip": "Delays an enemy's attack by 1 turn",
-		"cost": 2
+		"rarity": "Common"
 	},
 	"Lightning Chain": {
 		"ability": Callable(self, "lightning_chain_ability"),
@@ -107,7 +107,7 @@ var artifacts = {
 		"cooldown": 4,
 		"requires_targets": false,
 		"tooltip": "Deals half attack to 2 random enemies",
-		"cost": 5
+		"rarity": "Rare"
 	},
 	"Shadow Cloak": {
 		"ability": Callable(self, "shadow_cloak_ability"),
@@ -115,7 +115,7 @@ var artifacts = {
 		"cooldown": 3,
 		"requires_targets": false,
 		"tooltip": "Makes this card untouchable for one turn",
-		"cost": 4
+		"rarity": "Uncommon"
 	},
 	"Earth Spike": {
 		"ability": Callable(self, "earth_spike_ability"),
@@ -123,7 +123,7 @@ var artifacts = {
 		"cooldown": 2,
 		"requires_targets": true,
 		"tooltip": "Deals 4 damage to one enemy",
-		"cost": 3
+		"rarity": "Common"
 	},
 	"Soul Gem": {
 		"ability": Callable(self, "soul_gem_ability"),
@@ -131,27 +131,28 @@ var artifacts = {
 		"cooldown": 5,
 		"requires_targets": false,
 		"tooltip": "Revives a fallen card with half health",
-		"cost": 5
+		"rarity": "Rare"
 	},
-	"Blood Rune": {
+	"Blood Rune": { # This is an artifact, not a rune, despite its name
 		"ability": Callable(self, "blood_rune_ability"),
-		"icon": "res://artifacts/blood_rune.png",
+		"icon": "res://artifacts/blood_rune.png", # Assuming this is an artifact icon
 		"cooldown": 3,
 		"requires_targets": false,
 		"tooltip": "Doubles attack for one turn",
-		"cost": 4
+		"rarity": "Rare"
 	},
 	# Example new artifact - Lightning Storm
 	"Lightning Storm": {
 		"ability": Callable(self, "lightning_storm_ability"),
-		"icon": "res://artifacts/lightning_storm.png",
+		"icon": "res://artifacts/lightning_storm.png", # Ensure this icon exists
 		"cooldown": 4,
 		"requires_targets": true,
 		"tooltip": "Deals 3 damage to target and 1 damage to all other enemies",
-		"cost": 5
+		"rarity": "Rare"
 	}
 }
 # Rune data: name -> {ability: Callable, icon: String, tooltip: String, cost: int}
+# Rune costs are currently kept as they might be used by a different system (e.g. shop or direct purchase)
 var runes = {
 	"Double Trouble": {
 		"ability": Callable(self, "double_trouble_modify"),
@@ -349,9 +350,6 @@ func get_artifact_cooldown(artifact_name: String) -> int:
 
 func get_artifact_requires_targets(artifact_name: String) -> bool:
 	return artifacts[artifact_name]["requires_targets"]
-	
-func get_artifact_cost(artifact_name: String) -> bool:
-	return artifacts[artifact_name]["cost"]
 
 # Upgrade costs
 var health_upgrade_cost = 1

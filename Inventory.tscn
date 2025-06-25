@@ -1,0 +1,110 @@
+[gd_scene load_steps=2 format=3 uid="uid://d0yvj7j1wklwa"]
+
+[ext_resource type="Script" path="res://scripts/Inventory.gd" id="1_abcde"] # Placeholder ID
+
+[node name="Inventory" type="Control"]
+layout_mode = 3 # AnchorsPreset.FULL_RECT
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_abcde")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75) # Semi-transparent black background
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Inventory"
+horizontal_alignment = 1 # HORIZONTAL_ALIGNMENT_CENTER
+theme_override_font_sizes/font_size = 32
+
+[node name="HSplitContainer" type="HSplitContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3 # SIZE_EXPAND_FILL
+split_offset = 200
+
+[node name="CharactersPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3 # SIZE_EXPAND_FILL
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/CharactersPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CharsTitle" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/CharactersPanel/VBoxContainer"]
+layout_mode = 2
+text = "Characters"
+horizontal_alignment = 1
+
+[node name="ScrollContainerChars" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/CharactersPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CharacterList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/CharactersPanel/VBoxContainer/ScrollContainerChars"]
+unique_name_in_owner = true # To easily access with %CharacterList
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ArtifactsPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3 # SIZE_EXPAND_FILL
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ArtifactsTitle" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer"]
+layout_mode = 2
+text = "Owned Artifacts"
+horizontal_alignment = 1
+
+[node name="ScrollContainerArtifacts" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ArtifactInventoryList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer/ScrollContainerArtifacts"]
+unique_name_in_owner = true # To easily access with %ArtifactInventoryList
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EquippedSection" type="PanelContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0 # Don't expand by default
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer/EquippedSection"]
+layout_mode = 2
+
+[node name="EquippedTitle" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer/EquippedSection/VBoxContainer"]
+layout_mode = 2
+text = "Equipped on Selected Character:"
+horizontal_alignment = 1
+
+[node name="EquippedArtifactsList" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer/ArtifactsPanel/VBoxContainer/EquippedSection/VBoxContainer"]
+unique_name_in_owner = true # To easily access with %EquippedArtifactsList
+layout_mode = 2
+alignment = 1 # ALIGNMENT_CENTER
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4 # Center horizontally
+text = "Close Inventory"

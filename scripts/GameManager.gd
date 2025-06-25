@@ -328,8 +328,10 @@ func reset_player_attacks():
 
 func player_end_turn():
 	for card in get_node("../PlayerCards").get_children():
-		if card.artifact:
-			card.artifact.turn_end()
+		if card.is_player and not card.artifacts.is_empty(): # Check if it's a player card and has artifacts
+			for artf in card.artifacts: # Iterate through the artifacts array
+				if artf: # Ensure artifact exists
+					artf.turn_end()
 	current_state = State.ENEMY_TURN
 	get_node("../UIManager").update_turn_label()
 	perform_enemy_turn()
@@ -560,25 +562,46 @@ func _on_card_pressed(card):
 			perform_attack(selected_card, card)
 			selected_card = null
 
-func _on_ability_pressed(card):
-	if current_state != State.PLAYER_TURN or not card.artifact or card.ability_used or card.has_attacked or card.artifact.current_cooldown > 0:
-		if card.has_attacked:
-			print("%s cannot use ability after attacking this turn." % card.name)
+func _on_ability_pressed(card): # card is the CardBase instance
+	# Basic turn and state checks
+	if current_state != State.PLAYER_TURN or card.ability_used or card.has_attacked:
+		if card.has_attacked: # Provide specific feedback if already attacked
+			print("%s cannot use ability after attacking this turn." % card.text) # Use card.text for name
+		elif card.ability_used:
+			print("%s has already used an ability this turn." % card.text)
+		return
+
+	# Check if the card has any artifacts and if the primary one (artifacts[0]) can be used
+	if card.artifacts.is_empty():
+		print("%s has no artifacts equipped." % card.text)
+		return
+
+	var artifact_to_use = card.artifacts[0] # Defaulting to the first artifact
+
+	if not artifact_to_use: # Should not happen if artifacts array is not empty and contains valid objects
+		printerr("Error: %s has an empty or invalid entry in artifacts array." % card.text)
+		return
+
+	if artifact_to_use.current_cooldown > 0:
+		print("%s's %s is on cooldown for %d turns." % [card.text, artifact_to_use.name, artifact_to_use.current_cooldown])
 		return
 	
-	if card.artifact.requires_targets:
+	# Proceed with targeting or direct use
+	if artifact_to_use.requires_targets:
 		if is_targeting_ability and targeting_card == card:
+			# Cancel targeting if the same card's ability is pressed again while targeting
 			is_targeting_ability = false
 			targeting_card = null
 			set_targeting_cursor(false)
-			print("Targeting cancelled")
+			print("Targeting cancelled for %s's %s." % [card.text, artifact_to_use.name])
 		else:
 			is_targeting_ability = true
-			targeting_card = card
+			targeting_card = card # This is the card whose ability is being targeted
 			set_targeting_cursor(true)
-			print("Select a target for %s's %s" % [card.name, card.artifact.name])
+			print("Select a target for %s's %s." % [card.text, artifact_to_use.name])
 	else:
-		card.use_ability([])
+		# Non-targeted ability
+		card.use_ability([]) # CardBase.use_ability will use artifacts[0]
 		card.ability_used = true
 		card.has_attacked = true
 		if check_wave_cleared():
@@ -630,7 +653,24 @@ func _on_load_game():
 				card_instance.health = card_data.get("health", 10)
 				card_instance.max_health = card_data.get("max_health", 10)
 				card_instance.attack = card_data.get("attack", 1)
-				# TODO: Re-instance artifact if artifact_data exists in card_data
+
+				# Re-instance artifacts
+				card_instance.artifacts = [] # Initialize as empty array
+				var loaded_artifacts_data = card_data.get("artifacts", [])
+				if loaded_artifacts_data is Array:
+					for art_data in loaded_artifacts_data:
+						if art_data is Dictionary and art_data.has("name"):
+							var artifact_name = art_data.get("name")
+							var new_artifact = ArtifactFactory.create_artifact(artifact_name)
+							if new_artifact:
+								new_artifact.current_cooldown = art_data.get("current_cooldown", 0)
+								var rune_name = art_data.get("rune", "")
+								if not rune_name.is_empty():
+									# ArtifactFactory.attach_rune_to_artifact handles rune creation
+									ArtifactFactory.attach_rune_to_artifact(new_artifact, rune_name)
+								card_instance.artifacts.append(new_artifact)
+							else:
+								printerr("GameManager _on_load_game: Failed to create artifact '%s'" % artifact_name)
 				
 				player_cards_node.add_child(card_instance)
 				card_instance.add_to_group("PlayerCards")

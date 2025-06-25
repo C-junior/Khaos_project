@@ -34,9 +34,10 @@ var player_characters = {
 # Global player data (persists across runs)
 var current_khaos_coins = 0
 var unlocked_characters_global: Dictionary = {} # Globals.CardType (int) -> bool
-var unlocked_artifacts_status: Dictionary = {} # Artifact Name (String) -> bool (already suitable)
+var unlocked_artifacts_status: Dictionary = {} # Artifact Name (String) -> bool (tracks *globally unlocked* artifacts)
 var unlocked_runes_global: Dictionary = {}     # Rune Name (String) -> bool
 var talent_tree_progress_global: Dictionary = {} # Placeholder for future talent system
+var player_artifact_inventory: Array = [] # Stores names of artifacts player *owns* in the current run/save
 
 # Per-run data (reset or loaded per game run)
 # These will be populated by load_game() if a run is active.
@@ -149,9 +150,10 @@ func save_game():
 	var global_player_data = {
 		"khaos_coins": current_khaos_coins,
 		"unlocked_characters": {}, # Use string keys for JSON compatibility
-		"unlocked_artifacts": unlocked_artifacts_status, # Already Name (String) -> bool
-		"unlocked_runes": unlocked_runes_global,         # Already Name (String) -> bool
+		"unlocked_artifacts": unlocked_artifacts_status, # Tracks globally available artifacts
+		"unlocked_runes": unlocked_runes_global,
 		"talent_tree_progress": talent_tree_progress_global
+		# player_artifact_inventory is part of run_data, not global_player_data
 	}
 	# Convert integer keys in unlocked_characters_global to strings for JSON
 	for char_type_int in unlocked_characters_global:
@@ -169,18 +171,29 @@ func save_game():
 
 		run_data = {
 			"current_wave": current_run_wave,
-			"player_cards": []
+			"player_cards": [],
+			"player_artifact_inventory": player_artifact_inventory # Add inventory here
 		}
 		for card in player_cards_node.get_children():
-			var artifact_data = null
-			if card.artifact:
-				artifact_data = {"name": card.artifact.name, "rune": card.artifact.rune.name if card.artifact.rune else ""}
+			var saved_artifacts_data = []
+			if not card.artifacts.is_empty():
+				for artf_instance in card.artifacts:
+					if artf_instance: # Ensure the artifact instance is valid
+						var rune_name = ""
+						if artf_instance.rune:
+							rune_name = artf_instance.rune.name
+						saved_artifacts_data.append({
+							"name": artf_instance.name,
+							"rune": rune_name,
+							"current_cooldown": artf_instance.current_cooldown # Save cooldown state
+						})
+
 			run_data.player_cards.append({
 				"type": card.type,
 				"health": card.health,
 				"max_health": card.max_health,
 				"attack": card.attack,
-				"artifact": artifact_data
+				"artifacts": saved_artifacts_data # Changed from "artifact" to "artifacts"
 			})
 	
 	var save_data = {
@@ -250,6 +263,7 @@ func load_game(): # This function now primarily loads a game *run*. Global data 
 
 	print("DataManager: Loading run data...")
 	current_wave_run = run_data_to_load.get("current_wave", 0)
+	player_artifact_inventory = run_data_to_load.get("player_artifact_inventory", []) # Load inventory
 	
 	# Clear existing player cards before loading new ones (if any are on scene)
 	var player_cards_node = get_node_or_null("../PlayerCards")

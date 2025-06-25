@@ -34,8 +34,10 @@ var status_effects = {
 # Spell tracking for mage
 var spell_count: int = 0
 
-# Artifact
-var artifact: Artifact = null
+# Artifacts - can equip up to max_artifacts
+var artifacts: Array = []
+var max_artifacts: int = 2
+# var active_artifact_index: int = 0 # Could be used if player can switch active artifact
 
 # UI References - Use proper node paths based on your scene structure
 @onready var health_bar = $VBoxContainer/HealthBar
@@ -119,10 +121,18 @@ func attack_target(target) -> void:
 		status_effects.attack_boost = 0
 		attack = base_attack
 
-func use_ability(targets = null) -> void:
-	if artifact and artifact.can_use():
-		artifact.use(self, targets if targets else [])
-		ability_activated.emit(self)
+func use_ability(targets = null) -> void: # Or use_ability(artifact_index: int, targets = null)
+	# For now, assumes the first artifact is used if multiple are equipped.
+	# This can be expanded later with artifact_index or a different selection mechanism.
+	if not artifacts.is_empty():
+		var artifact_to_use = artifacts[0] # Default to the first artifact
+		# Example: if you had active_artifact_index:
+		# if active_artifact_index >= 0 and active_artifact_index < artifacts.size():
+		#    artifact_to_use = artifacts[active_artifact_index]
+
+		if artifact_to_use and artifact_to_use.can_use():
+			artifact_to_use.use(self, targets if targets else [])
+			ability_activated.emit(self) # Consider passing which artifact was activated
 
 func apply_status_effect(effect: String, value) -> void:
 	status_effects[effect] = value
@@ -158,9 +168,21 @@ func _on_card_hover() -> void:
 			max_health,
 			attack,
 			Data.passive_abilities.get(type, {}) if Data else {},
-			artifact.name if artifact else "",
-			artifact.current_cooldown if artifact else 0
+			# artifacts property is an array of Artifact objects
+			# We need to extract names and cooldowns for the tooltip
+			# This is a simplified example; Tooltip.gd would need to handle an array of artifact data
+			artifacts # Pass the whole array, Tooltip.gd will need to adapt
 		)
+		# Old way for single artifact:
+		# tooltip.set_card_data(
+		# 	text,
+		# 	health,
+		# 	max_health,
+		# 	attack,
+		# 	Data.passive_abilities.get(type, {}) if Data else {},
+		# 	artifact.name if artifact else "",
+		# 	artifact.current_cooldown if artifact else 0
+		# )
 
 func _on_hover_exit() -> void:
 	var tooltip = get_node("/root/Tooltip")
@@ -168,7 +190,14 @@ func _on_hover_exit() -> void:
 		tooltip.hide()
 
 func _on_ability_button_pressed() -> void:
-	if artifact and artifact.can_use():
-		var game_manager = get_node("/root/GameManager")
-		if game_manager and game_manager.has_method("on_ability_pressed"):
-			game_manager.on_ability_pressed(self)
+	# Assumes the first artifact is the one activated by the generic button.
+	# If character has no artifacts, or the first one cannot be used, do nothing.
+	if not artifacts.is_empty():
+		var artifact_to_check = artifacts[0]
+		if artifact_to_check and artifact_to_check.can_use():
+			var game_manager = get_node("/root/GameManager") # Assuming GameManager is at this path
+			if game_manager and game_manager.has_method("on_ability_pressed"):
+				# GameManager's on_ability_pressed will call this card's use_ability,
+				# which in turn uses artifacts[0] by default.
+				game_manager.on_ability_pressed(self)
+				# If we needed to specify which artifact: game_manager.on_ability_pressed(self, 0)
