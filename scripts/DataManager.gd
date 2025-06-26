@@ -172,11 +172,12 @@ func save_game():
 		run_data = {
 			"current_wave": current_run_wave,
 			"player_cards": [],
-			"player_artifact_inventory": player_artifact_inventory # Add inventory here
+			"player_artifact_inventory": player_artifact_inventory
 		}
+		print("DataManager DEBUG (save_game): Saving player_artifact_inventory: ", player_artifact_inventory)
 		for card in player_cards_node.get_children():
 			var saved_artifacts_data = []
-			if not card.artifacts.is_empty():
+			if not card.artifacts.is_empty(): # Use the new 'artifacts' array
 				for artf_instance in card.artifacts:
 					if artf_instance: # Ensure the artifact instance is valid
 						var rune_name = ""
@@ -185,15 +186,15 @@ func save_game():
 						saved_artifacts_data.append({
 							"name": artf_instance.name,
 							"rune": rune_name,
-							"current_cooldown": artf_instance.current_cooldown # Save cooldown state
+							"current_cooldown": artf_instance.current_cooldown
 						})
-
+			
 			run_data.player_cards.append({
 				"type": card.type,
 				"health": card.health,
 				"max_health": card.max_health,
 				"attack": card.attack,
-				"artifacts": saved_artifacts_data # Changed from "artifact" to "artifacts"
+				"artifacts": saved_artifacts_data # Changed key to "artifacts"
 			})
 	
 	var save_data = {
@@ -263,7 +264,9 @@ func load_game(): # This function now primarily loads a game *run*. Global data 
 
 	print("DataManager: Loading run data...")
 	current_wave_run = run_data_to_load.get("current_wave", 0)
-	player_artifact_inventory = run_data_to_load.get("player_artifact_inventory", []) # Load inventory
+	# Load player_artifact_inventory from run_data, default to empty array if not found
+	player_artifact_inventory = run_data_to_load.get("player_artifact_inventory", [])
+	print("DataManager DEBUG (load_game): Loaded player_artifact_inventory: ", player_artifact_inventory)
 	
 	# Clear existing player cards before loading new ones (if any are on scene)
 	var player_cards_node = get_node_or_null("../PlayerCards")

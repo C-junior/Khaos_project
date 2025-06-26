@@ -11,7 +11,8 @@ var targeting_cursor = load("res://cursors/targeting1.png")
 var current_state = State.PLAYER_TURN
 var selected_card = null
 var is_targeting_ability = false
-var targeting_card = null
+var targeting_card = null # Card whose ability is being targeted
+var targeting_artifact_index: int = -1 # Which artifact on targeting_card is being used
 var current_wave = 0
 var _dm_instance = null # Cache for DataManager instance
 
@@ -187,13 +188,8 @@ func start_game():
 		card_instance.pressed.connect(Callable(self, "_on_card_pressed").bind(card_instance))
 		print("GameManager.start_game: Card instance %s (type %s) added to scene and pressed signal connected." % [card_instance.name, char_type_enum]) # card_instance.name might be empty
 		
-		# Connect ability button
-		var ability_button = card_instance.get_node_or_null("VBoxContainer/AbilityButton") # Adjust path as needed
-		if ability_button:
-			ability_button.pressed.connect(Callable(self, "_on_ability_pressed").bind(card_instance))
-			print("GameManager.start_game: Ability button connected for card type %s." % char_type_enum)
-		else:
-			print("Warning: Could not find VBoxContainer/AbilityButton for card type: %s" % char_type_enum) 
+		# Removed connection for old single VBoxContainer/AbilityButton.
+		# CardBase.gd now handles connecting its new ability_button_1 and ability_button_2.
 		
 		card_instance.update_labels()       # Initialize UI text elements on the card
 		card_instance.update_appearance()   # Set texture and name label based on type
@@ -329,9 +325,9 @@ func reset_player_attacks():
 func player_end_turn():
 	for card in get_node("../PlayerCards").get_children():
 		if card.is_player and not card.artifacts.is_empty(): # Check if it's a player card and has artifacts
-			for artf in card.artifacts: # Iterate through the artifacts array
-				if artf: # Ensure artifact exists
-					artf.turn_end()
+			for artf_instance in card.artifacts: # Iterate through the artifacts array
+				if artf_instance: # Ensure artifact instance is valid
+					artf_instance.turn_end()
 	current_state = State.ENEMY_TURN
 	get_node("../UIManager").update_turn_label()
 	perform_enemy_turn()
@@ -532,13 +528,23 @@ func _on_card_pressed(card):
 	if current_state != State.PLAYER_TURN:
 		return
 	if is_targeting_ability:
-		if not card.is_player and targeting_card:
-			targeting_card.use_ability([card])
+		if not card.is_player and targeting_card and targeting_artifact_index != -1:
+			# Ensure the targeting_card has the use_specific_artifact method
+			if targeting_card.has_method("use_specific_artifact"):
+				targeting_card.use_specific_artifact(targeting_artifact_index, [card])
+			else:
+				# Fallback or error if method doesn't exist (e.g. on older card script version)
+				printerr("Targeting card %s does not have use_specific_artifact method." % targeting_card.name)
+				targeting_card.use_ability([card]) # Fallback to old method, might use wrong artifact
+
 			targeting_card.ability_used = true
-			targeting_card.has_attacked = true
+			targeting_card.has_attacked = true # Using an ability counts as an action
+			
 			is_targeting_ability = false
 			targeting_card = null
+			targeting_artifact_index = -1 # Reset artifact index
 			set_targeting_cursor(false)
+			
 			if check_wave_cleared():
 				var dm = _get_dm_instance("_on_card_pressed_wave_cleared") # Use helper
 				if is_instance_valid(dm): # Check instance validity
@@ -562,48 +568,56 @@ func _on_card_pressed(card):
 			perform_attack(selected_card, card)
 			selected_card = null
 
-func _on_ability_pressed(card): # card is the CardBase instance
+func _on_ability_pressed(card: CardBase, artifact_index: int):
 	# Basic turn and state checks
 	if current_state != State.PLAYER_TURN or card.ability_used or card.has_attacked:
-		if card.has_attacked: # Provide specific feedback if already attacked
-			print("%s cannot use ability after attacking this turn." % card.text) # Use card.text for name
+		if card.has_attacked:
+			print("%s cannot use ability after attacking this turn." % card.text)
 		elif card.ability_used:
 			print("%s has already used an ability this turn." % card.text)
 		return
 
-	# Check if the card has any artifacts and if the primary one (artifacts[0]) can be used
-	if card.artifacts.is_empty():
-		print("%s has no artifacts equipped." % card.text)
+	# Check if the card has the specified artifact and if it can be used
+	if artifact_index < 0 or artifact_index >= card.artifacts.size():
+		printerr("%s: Invalid artifact index %d." % [card.text, artifact_index])
+		return
+	
+	var artifact_to_use = card.artifacts[artifact_index]
+	
+	if not artifact_to_use: 
+		printerr("Error: %s has an invalid artifact at index %d." % [card.text, artifact_index])
 		return
 
-	var artifact_to_use = card.artifacts[0] # Defaulting to the first artifact
-
-	if not artifact_to_use: # Should not happen if artifacts array is not empty and contains valid objects
-		printerr("Error: %s has an empty or invalid entry in artifacts array." % card.text)
-		return
-
-	if artifact_to_use.current_cooldown > 0:
-		print("%s's %s is on cooldown for %d turns." % [card.text, artifact_to_use.name, artifact_to_use.current_cooldown])
+	if not artifact_to_use.can_use(): # can_use() checks cooldown
+		print("%s's %s is on cooldown or cannot be used." % [card.text, artifact_to_use.name])
 		return
 	
 	# Proceed with targeting or direct use
 	if artifact_to_use.requires_targets:
-		if is_targeting_ability and targeting_card == card:
-			# Cancel targeting if the same card's ability is pressed again while targeting
+		# If already targeting with this specific card and artifact, cancel it.
+		if is_targeting_ability and targeting_card == card and targeting_artifact_index == artifact_index:
 			is_targeting_ability = false
 			targeting_card = null
+			targeting_artifact_index = -1 # Reset
 			set_targeting_cursor(false)
 			print("Targeting cancelled for %s's %s." % [card.text, artifact_to_use.name])
-		else:
+		else: # Start targeting for this card and artifact
 			is_targeting_ability = true
-			targeting_card = card # This is the card whose ability is being targeted
+			targeting_card = card
+			targeting_artifact_index = artifact_index # Store which artifact is targeting
 			set_targeting_cursor(true)
 			print("Select a target for %s's %s." % [card.text, artifact_to_use.name])
 	else:
 		# Non-targeted ability
-		card.use_ability([]) # CardBase.use_ability will use artifacts[0]
+		if card.has_method("use_specific_artifact"):
+			card.use_specific_artifact(artifact_index, [])
+		else:
+			printerr("Card %s does not have use_specific_artifact method." % card.name)
+			# Fallback or error
+			return 
+			
 		card.ability_used = true
-		card.has_attacked = true
+		card.has_attacked = true # Using an ability counts as an action
 		if check_wave_cleared():
 			var dm = _get_dm_instance("_on_ability_pressed_wave_cleared") # Use helper
 			if is_instance_valid(dm): # Check instance validity
@@ -653,10 +667,10 @@ func _on_load_game():
 				card_instance.health = card_data.get("health", 10)
 				card_instance.max_health = card_data.get("max_health", 10)
 				card_instance.attack = card_data.get("attack", 1)
-
+				
 				# Re-instance artifacts
 				card_instance.artifacts = [] # Initialize as empty array
-				var loaded_artifacts_data = card_data.get("artifacts", [])
+				var loaded_artifacts_data = card_data.get("artifacts", []) # Expect "artifacts" key from DataManager
 				if loaded_artifacts_data is Array:
 					for art_data in loaded_artifacts_data:
 						if art_data is Dictionary and art_data.has("name"):
@@ -666,7 +680,6 @@ func _on_load_game():
 								new_artifact.current_cooldown = art_data.get("current_cooldown", 0)
 								var rune_name = art_data.get("rune", "")
 								if not rune_name.is_empty():
-									# ArtifactFactory.attach_rune_to_artifact handles rune creation
 									ArtifactFactory.attach_rune_to_artifact(new_artifact, rune_name)
 								card_instance.artifacts.append(new_artifact)
 							else:
@@ -675,9 +688,8 @@ func _on_load_game():
 				player_cards_node.add_child(card_instance)
 				card_instance.add_to_group("PlayerCards")
 				card_instance.pressed.connect(Callable(self, "_on_card_pressed").bind(card_instance))
-				var ability_button = card_instance.get_node_or_null("VBoxContainer/AbilityButton") 
-				if ability_button:
-					ability_button.pressed.connect(Callable(self, "_on_ability_pressed").bind(card_instance))
+				# Removed connection for old single VBoxContainer/AbilityButton.
+				# CardBase.gd now handles connecting its new ability_button_1 and ability_button_2.
 				card_instance.update_labels() 
 			else:
 				printerr("GameManager: Failed to load Card.tscn for loading game.")

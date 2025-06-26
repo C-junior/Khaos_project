@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://lutv0t7myob2"]
+[gd_scene load_steps=7 format=3 uid="uid://lutv0t7myob2"]
 
 [ext_resource type="Texture2D" uid="uid://ck76hbj7w7rct" path="res://bg-arena.png" id="1_sgcma"]
 [ext_resource type="Script" uid="uid://brpc7uhyalbhr" path="res://scripts/GameManager.gd" id="2_vao72"]
 [ext_resource type="Script" uid="uid://dpti20fyuklp3" path="res://scripts/UIManager.gd" id="3_5e8q2"]
 [ext_resource type="Script" uid="uid://d2edaki3ohhlg" path="res://scripts/DataManager.gd" id="4_53i20"]
 [ext_resource type="PackedScene" uid="uid://bi2cou0nn3ke7" path="res://CharacterSelection.tscn" id="5_27514"]
+[ext_resource type="PackedScene" uid="uid://cpp88nek5fmwi" path="res://inventory.tscn" id="6_7mycd"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -139,3 +140,12 @@ offset_left = 28.0
 offset_top = 5.0
 offset_right = 28.0
 offset_bottom = 5.0
+
+[node name="Inventory" parent="." instance=ExtResource("6_7mycd")]
+layout_mode = 1
+offset_left = 55.0
+offset_top = 25.0
+offset_right = 815.0
+offset_bottom = 585.0
+grow_horizontal = 2
+grow_vertical = 2

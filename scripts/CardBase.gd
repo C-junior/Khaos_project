@@ -43,7 +43,9 @@ var max_artifacts: int = 2
 @onready var health_bar = $VBoxContainer/HealthBar
 @onready var health_label = $VBoxContainer/HealthLabel
 @onready var attack_label = $VBoxContainer/AttackLabel
-@onready var ability_button = $VBoxContainer/AbilityButton
+# Assuming the buttons are now inside an HBoxContainer, which itself is in the VBoxContainer
+@onready var ability_button_1 = $VBoxContainer/HBoxContainer/AbilityButton1
+@onready var ability_button_2 = $VBoxContainer/HBoxContainer/AbilityButton2
 
 func _ready() -> void:
 	# Wait one frame to ensure all nodes are ready
@@ -54,17 +56,26 @@ func _ready() -> void:
 	base_attack = attack  # Store original attack value
 
 func setup_ui() -> void:
-	# Check if ability_button exists before trying to hide it
-	if ability_button and not is_player:
-		ability_button.hide()
+	if not is_player:
+		if ability_button_1: ability_button_1.hide()
+		if ability_button_2: ability_button_2.hide()
+	else:
+		# Manage visibility based on equipped artifacts
+		if ability_button_1:
+			ability_button_1.visible = artifacts.size() >= 1
+		if ability_button_2:
+			ability_button_2.visible = artifacts.size() >= 2
+			
 	update_labels()
 
 func connect_signals() -> void:
 	mouse_entered.connect(_on_card_hover)
 	mouse_exited.connect(_on_hover_exit)
-	# Only connect if ability_button exists
-	if ability_button:
-		ability_button.pressed.connect(_on_ability_button_pressed)
+	
+	if ability_button_1:
+		ability_button_1.pressed.connect(_on_ability_button_1_pressed)
+	if ability_button_2:
+		ability_button_2.pressed.connect(_on_ability_button_2_pressed)
 
 func update_appearance() -> void:
 	# This method is meant to be overridden by child classes like Card
@@ -121,18 +132,27 @@ func attack_target(target) -> void:
 		status_effects.attack_boost = 0
 		attack = base_attack
 
-func use_ability(targets = null) -> void: # Or use_ability(artifact_index: int, targets = null)
-	# For now, assumes the first artifact is used if multiple are equipped.
-	# This can be expanded later with artifact_index or a different selection mechanism.
-	if not artifacts.is_empty():
-		var artifact_to_use = artifacts[0] # Default to the first artifact
-		# Example: if you had active_artifact_index:
-		# if active_artifact_index >= 0 and active_artifact_index < artifacts.size():
-		#    artifact_to_use = artifacts[active_artifact_index]
-
+# New method to use a specific artifact by index
+func use_specific_artifact(artifact_index: int, targets = null) -> void:
+	if artifact_index >= 0 and artifact_index < artifacts.size():
+		var artifact_to_use = artifacts[artifact_index]
 		if artifact_to_use and artifact_to_use.can_use():
 			artifact_to_use.use(self, targets if targets else [])
-			ability_activated.emit(self) # Consider passing which artifact was activated
+			ability_activated.emit(self) # Consider passing which artifact was activated (e.g., by index or name)
+	else:
+		printerr("%s: Attempted to use artifact at invalid index %d" % [text, artifact_index])
+
+# Old use_ability can be removed or repurposed if there's a concept of a "default" ability
+# For now, let's remove it to avoid confusion, as GameManager will call use_specific_artifact.
+func use_ability(targets = null) -> void: # Reinstated for super call from Card.gd
+	if not artifacts.is_empty() and artifacts[0]: # Check if first artifact exists
+		if has_method("use_specific_artifact"): # Ensure the method exists
+			use_specific_artifact(0, targets) # Default to using the first artifact
+		else:
+			printerr("CardBase: use_specific_artifact method not found, cannot default use_ability.")
+	else:
+		print("%s: use_ability called but no first artifact available." % text)
+
 
 func apply_status_effect(effect: String, value) -> void:
 	status_effects[effect] = value
@@ -168,36 +188,36 @@ func _on_card_hover() -> void:
 			max_health,
 			attack,
 			Data.passive_abilities.get(type, {}) if Data else {},
-			# artifacts property is an array of Artifact objects
-			# We need to extract names and cooldowns for the tooltip
-			# This is a simplified example; Tooltip.gd would need to handle an array of artifact data
-			artifacts # Pass the whole array, Tooltip.gd will need to adapt
+			# Pass the whole array; Tooltip.gd will need to be adapted later
+			# For now, to prevent errors, we can pass info for the first artifact if it exists
+			artifacts[0].name if not artifacts.is_empty() and artifacts[0] else "",
+			artifacts[0].current_cooldown if not artifacts.is_empty() and artifacts[0] else 0
+			# Ideal pass-through for later Tooltip.gd update:
+			# artifacts
 		)
-		# Old way for single artifact:
-		# tooltip.set_card_data(
-		# 	text,
-		# 	health,
-		# 	max_health,
-		# 	attack,
-		# 	Data.passive_abilities.get(type, {}) if Data else {},
-		# 	artifact.name if artifact else "",
-		# 	artifact.current_cooldown if artifact else 0
-		# )
 
 func _on_hover_exit() -> void:
 	var tooltip = get_node("/root/Tooltip")
 	if tooltip:
 		tooltip.hide()
 
-func _on_ability_button_pressed() -> void:
-	# Assumes the first artifact is the one activated by the generic button.
-	# If character has no artifacts, or the first one cannot be used, do nothing.
-	if not artifacts.is_empty():
-		var artifact_to_check = artifacts[0]
-		if artifact_to_check and artifact_to_check.can_use():
-			var game_manager = get_node("/root/GameManager") # Assuming GameManager is at this path
-			if game_manager and game_manager.has_method("on_ability_pressed"):
-				# GameManager's on_ability_pressed will call this card's use_ability,
-				# which in turn uses artifacts[0] by default.
-				game_manager.on_ability_pressed(self)
-				# If we needed to specify which artifact: game_manager.on_ability_pressed(self, 0)
+# Remove old single button handler:
+# func _on_ability_button_pressed() -> void:
+	# ...
+
+func _on_ability_button_1_pressed() -> void:
+	if artifacts.size() >= 1 and artifacts[0] and artifacts[0].can_use():
+		var game_manager = get_node("/root/GameManager") # Path to GameManager
+		if game_manager and game_manager.has_method("on_ability_pressed"):
+			# GameManager's on_ability_pressed will need to accept an artifact_index
+			game_manager.on_ability_pressed(self, 0) # 0 for the first artifact
+	else:
+		print("%s: Cannot use artifact 1 (not equipped or on cooldown)." % text)
+
+func _on_ability_button_2_pressed() -> void:
+	if artifacts.size() >= 2 and artifacts[1] and artifacts[1].can_use():
+		var game_manager = get_node("/root/GameManager") # Path to GameManager
+		if game_manager and game_manager.has_method("on_ability_pressed"):
+			game_manager.on_ability_pressed(self, 1) # 1 for the second artifact
+	else:
+		print("%s: Cannot use artifact 2 (not equipped or on cooldown)." % text)

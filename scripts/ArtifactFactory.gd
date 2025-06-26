@@ -15,7 +15,7 @@ static func create_artifact(artifact_name: String) -> Artifact:
 		artifact_data.cooldown,
 		artifact_data.requires_targets,
 		artifact_data.tooltip,
-		artifact_data.rarity
+		artifact_data.get("rarity", "Common") # Use .get with default for safety
 	)
 	
 	return artifact

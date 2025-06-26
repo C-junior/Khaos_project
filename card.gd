@@ -202,16 +202,47 @@ func update_labels() -> void:
 		$VBoxContainer/HealthBar.value = health
 		$VBoxContainer/HealthBar.max_value = max_health
 	
-	if is_player and artifact:
-		if has_node("VBoxContainer/AbilityButton"):
-			$VBoxContainer/AbilityButton.text = "Use %s%s" % [artifact.name, " (CD: %d)" % artifact.current_cooldown if artifact.current_cooldown > 0 else ""]
-		if has_node("VBoxContainer/ArtifactIcon"):
-			$VBoxContainer/ArtifactIcon.texture = load(get_artifact_icon_path(artifact.name))
-	elif is_player:
-		if has_node("VBoxContainer/AbilityButton"):
-			$VBoxContainer/AbilityButton.text = "No Artifact"
-		if has_node("VBoxContainer/ArtifactIcon"):
-			$VBoxContainer/ArtifactIcon.texture = null
+	# Note: ability_button_1 and ability_button_2 are inherited from CardBase
+	# Their general visibility (if player) is handled by CardBase.setup_ui()
+	# Here, we primarily set text and specific icons if they exist within Card.tscn's structure.
+
+	var icon1_node_path = "VBoxContainer/HBoxContainer/ArtifactIcon1" # Assumed path for icon of artifact 1
+	var icon2_node_path = "VBoxContainer/HBoxContainer/ArtifactIcon2" # Assumed path for icon of artifact 2
+
+	if is_player:
+		if ability_button_1: # Check if inherited button is valid
+			if artifacts.size() >= 1 and artifacts[0]:
+				var art_0 = artifacts[0]
+				ability_button_1.text = "Use %s%s" % [art_0.name, " (CD: %d)" % art_0.current_cooldown if art_0.current_cooldown > 0 else ""]
+				if has_node(icon1_node_path):
+					get_node(icon1_node_path).texture = load(get_artifact_icon_path(art_0.name))
+				# ability_button_1.visible = true # Visibility handled by CardBase.setup_ui
+			#else:
+				#ability_button_1.text = "Ability 1" # Default text or hide
+				#if has_node(icon1_node_path):
+					#get_node(icon1_node_path).texture = null
+				# ability_button_1.visible = false # Visibility handled by CardBase.setup_ui
+		
+		if ability_button_2: # Check if inherited button is valid
+			if artifacts.size() >= 2 and artifacts[1]:
+				var art_1 = artifacts[1]
+				ability_button_2.text = "Use %s%s" % [art_1.name, " (CD: %d)" % art_1.current_cooldown if art_1.current_cooldown > 0 else ""]
+				if has_node(icon2_node_path):
+					get_node(icon2_node_path).texture = load(get_artifact_icon_path(art_1.name))
+				# ability_button_2.visible = true # Visibility handled by CardBase.setup_ui
+			#else:
+				#ability_button_2.text = "Ability 2" # Default text or hide
+				#if has_node(icon2_node_path):
+					#get_node(icon2_node_path).texture = null
+				# ability_button_2.visible = false # Visibility handled by CardBase.setup_ui
+	
+	# Hide old single ArtifactIcon if it exists and is not one of the new ones
+	if has_node("VBoxContainer/ArtifactIcon"):
+		var old_icon = get_node("VBoxContainer/ArtifactIcon")
+		if old_icon.get_path() != get_path_to(get_node_or_null(icon1_node_path)) and \
+		   old_icon.get_path() != get_path_to(get_node_or_null(icon2_node_path)):
+			old_icon.hide()
+
 
 # Override hover functions
 func _on_card_hover():
@@ -224,8 +255,11 @@ func _on_card_hover():
 		max_health,
 		attack,
 		passive_data.get(_get_type_as_string_for_passive(type), {}), # Use helper for lookup
-		artifact.name if artifact else "",
-		artifact.current_cooldown if artifact else 0
+		# Pass the artifacts array. Tooltip.gd needs to be updated to handle this.
+		# For now, to prevent crash and show something, pass info for the first artifact.
+		artifacts[0].name if not artifacts.is_empty() and artifacts[0] else "",
+		artifacts[0].current_cooldown if not artifacts.is_empty() and artifacts[0] else 0
+		# The ideal call for a future Tooltip.gd update would be just: self.artifacts
 	)
 	get_tree().root.add_child(current_tooltip)
 	current_tooltip.global_position = get_global_mouse_position() + Vector2(10, 10)
@@ -287,8 +321,17 @@ func attack_target(target):
 #func attack_target(target):
 	#super.attack_target(target)
 
-func use_ability(targets = null):
-	super.use_ability(targets)
+func use_ability(targets = null): # This is Card.gd's override
+	# If Card.gd's use_ability is meant to trigger the first artifact by default when called.
+	if self.has_method("use_specific_artifact"): # Check if CardBase has the method
+		if not artifacts.is_empty() and artifacts[0]:
+			# Directly call CardBase's specific method, or let CardBase.use_ability handle it
+			super.use_specific_artifact(0, targets) 
+		else:
+			print("%s tried to use ability (via Card.gd override) but has no first artifact." % text)
+	else:
+		printerr("CardBase missing use_specific_artifact; Card.gd's use_ability override cannot function.")
+
 
 func apply_poison():
 	super.apply_poison()
